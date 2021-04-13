@@ -52,3 +52,14 @@ class FailImportingTestCase(TestCase):
     @fail_importing("modules.other")
     def test_nested_patching(self):
         self.inner_func()
+
+    class SomeClass:
+
+        @fail_importing("modules.example")
+        def some_method(self):
+            from modules import example
+            assert example
+
+    def test_method(self):
+        with self.assertRaises(ImportError):
+            self.SomeClass().some_method()
