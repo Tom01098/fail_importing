@@ -1,4 +1,5 @@
-from unittest import TestCase
+from importlib import import_module
+from unittest import TestCase, skip
 from unittest.mock import patch, MagicMock
 
 from patch_import import fail_importing
@@ -69,3 +70,9 @@ class FailImportingTestCase(TestCase):
     def test_method(self):
         with self.assertRaises(ImportError):
             self.SomeClass().some_method()
+
+    @skip
+    @fail_importing("modules.example")
+    def test_importlib(self):
+        with self.assertRaises(ImportError):
+            import_module("modules.example")
