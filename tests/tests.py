@@ -1,4 +1,4 @@
-from unittest import TestCase, skip
+from unittest import TestCase
 from unittest.mock import patch, MagicMock
 
 from patch_import import fail_importing
@@ -48,10 +48,16 @@ class FailImportingTestCase(TestCase):
             from modules import other
             assert other
 
-    @skip
     @fail_importing("modules.other")
     def test_nested_patching(self):
         self.inner_func()
+
+        with self.assertRaises(ImportError):
+            from modules import other
+            assert other
+
+        from modules import example
+        assert example
 
     class SomeClass:
 
