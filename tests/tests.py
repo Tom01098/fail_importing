@@ -18,6 +18,12 @@ class FailImportingTestCase(TestCase):
         from modules import example
         assert example
 
+    @fail_importing("modules")
+    def test_import_only(self):
+        with self.assertRaises(ImportError):
+            import modules
+            assert modules
+
     @fail_importing("modules.example", "modules.other")
     def test_multiple_match(self):
         with self.assertRaises(ImportError):

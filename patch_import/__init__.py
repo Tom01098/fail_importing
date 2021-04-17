@@ -13,7 +13,10 @@ class _FailImportingMock:
         self.paths = paths
 
     def __call__(self, name, globals=None, locals=None, fromlist=(), level=0):
-        full_import_path = f"{name}.{'.'.join(fromlist)}"
+        if fromlist is None:
+            full_import_path = name
+        else:
+            full_import_path = f"{name}.{'.'.join(fromlist)}"
         if full_import_path in self.paths:
             raise ImportError()
         return _real_import(name, globals, locals, fromlist, level)
