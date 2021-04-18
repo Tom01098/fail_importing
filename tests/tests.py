@@ -7,7 +7,7 @@ from patch_import import fail_importing
 
 class FailImportingTestCase(TestCase):
 
-    @fail_importing("modules.example")
+    @fail_importing("modules")
     def test_single_match(self):
         with self.assertRaises(ImportError):
             from modules import example
@@ -42,36 +42,30 @@ class FailImportingTestCase(TestCase):
         self.assertIsInstance(dict_mock, MagicMock)
         self.assertIsInstance(list_mock, MagicMock)
         with self.assertRaises(ImportError):
-            from modules import example
-            assert example
+            import modules.example
 
     @fail_importing("modules.example")
     def inner_func(self):
         with self.assertRaises(ImportError):
-            from modules import example
-            assert example
+            import modules.example
 
         with self.assertRaises(ImportError):
-            from modules import other
-            assert other
+            import modules.other
 
     @fail_importing("modules.other")
     def test_nested_patching(self):
         self.inner_func()
 
         with self.assertRaises(ImportError):
-            from modules import other
-            assert other
+            import modules.other
 
-        from modules import example
-        assert example
+        import modules.example
 
     class SomeClass:
 
-        @fail_importing("modules.example")
+        @fail_importing("modules")
         def some_method(self):
-            from modules import example
-            assert example
+            import modules
 
     def test_method(self):
         with self.assertRaises(ImportError):
