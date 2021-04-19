@@ -75,3 +75,9 @@ class FailImportingTestCase(TestCase):
     def test_importlib(self):
         with self.assertRaises(ImportError):
             importlib.import_module("modules.example")
+
+    @fail_importing(".*.other")
+    def test_regex(self):
+        import modules.example
+        with self.assertRaises(ImportError):
+            import modules.other

@@ -2,6 +2,7 @@
 """
 import builtins
 import importlib
+import re
 from functools import wraps
 from typing import Tuple
 from unittest.mock import patch
@@ -20,14 +21,15 @@ class _FailImportingMock:
         self.paths = paths
 
     def __call__(self, name, package=None, level=0):
-        if name in self.paths:
-            raise ImportError()
+        for path in self.paths:
+            if re.fullmatch(path, name):
+                raise ImportError()
         return _unpatched_import(name, package, level)
 
 
 def fail_importing(*paths: str):
     """Patch Python's import mechanism to fail with an ImportError for the
-    given paths. The paths must match exactly.
+    given paths.
     """
 
     def decorator(func):
