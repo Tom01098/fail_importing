@@ -105,3 +105,10 @@ class FailImportingTestCase(TestCase):
     def test_generator(self):
         with self.assertRaises(ImportError):
             list(self.generator())
+
+    def test_non_function_raises(self):
+        with self.assertRaises(RuntimeError):
+            @fail_importing()
+            class MyClass:
+                pass
+            assert MyClass

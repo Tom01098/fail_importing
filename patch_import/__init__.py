@@ -2,6 +2,7 @@
 """
 import builtins
 import importlib
+import inspect
 import re
 from functools import wraps
 from typing import Tuple
@@ -33,6 +34,9 @@ def fail_importing(*paths: str):
     """
 
     def decorator(func):
+        if not inspect.isfunction(func):
+            raise RuntimeError(f"Can't decorate {func.__name__} with {fail_importing.__name__} as it is not a function")
+
         @wraps(func)
         def inner(*args, **kwargs):
             nonlocal paths
