@@ -16,7 +16,8 @@ builtins.__import__ = importlib.__import__
 _unpatched_import = importlib._bootstrap._gcd_import
 
 
-class _FailImportingMock:
+# Patch a single function call.
+class _FunctionMock:
 
     def __init__(self, paths: Tuple[str]):
         self.paths = paths
@@ -26,6 +27,32 @@ class _FailImportingMock:
             if re.fullmatch(path, name):
                 raise ImportError()
         return _unpatched_import(name, package, level)
+
+
+# Generators are a little more involved. The generator function needs to be mocked over with an iterable, and that
+# iterator can be called multiple times. We care about patching over each call to the iterator, which is what we do in
+# __next__.
+# TODO Can introspectability be preserved here? _GeneratorMock isn't the 'expected' result of calling a generator,
+#  but these are tests and no one should care... right?
+class _IteratorMock:
+
+    def __init__(self, gen, paths):
+        self.gen = gen
+        self.paths = paths
+
+    def __next__(self):
+        with patch('importlib._bootstrap._gcd_import', _FunctionMock(self.paths)):
+            return next(self.gen)
+
+
+class _GeneratorMock:
+
+    def __init__(self, gen, paths):
+        self.gen = gen
+        self.paths = paths
+
+    def __iter__(self):
+        return _IteratorMock(self.gen, self.paths)
 
 
 def fail_importing(*paths: str):
@@ -44,11 +71,15 @@ def fail_importing(*paths: str):
             # Account for nested patching.
             gcd = importlib._bootstrap._gcd_import
 
-            if isinstance(gcd, _FailImportingMock):
+            if isinstance(gcd, _FunctionMock):
                 paths += gcd.paths
 
-            with patch('importlib._bootstrap._gcd_import', _FailImportingMock(paths)):
-                return func(*args, **kwargs)
+            # Do the patching!
+            if inspect.isgeneratorfunction(func):
+                return _GeneratorMock(func(*args, **kwargs), paths)
+            else:
+                with patch('importlib._bootstrap._gcd_import', _FunctionMock(paths)):
+                    return func(*args, **kwargs)
 
         return inner
 

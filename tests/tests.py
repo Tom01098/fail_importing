@@ -101,7 +101,6 @@ class FailImportingTestCase(TestCase):
         yield 0
         import modules.example
 
-    @skip
     def test_generator(self):
         with self.assertRaises(ImportError):
             list(self.generator())
