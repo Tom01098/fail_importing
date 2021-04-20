@@ -23,10 +23,14 @@ class _ImportMock:
         self.paths = paths
 
     def __call__(self, name: str, package: Optional[str] = None, level: int = 0) -> ModuleType:
+        if level > 0:
+            module_path = importlib._bootstrap._resolve_name(name, package, level)
+        else:
+            module_path = name
         for path in self.paths:
-            if re.fullmatch(path, name):
+            if re.fullmatch(path, module_path):
                 raise ImportError()
-        return _unpatched_import(name, package, level)
+        return _unpatched_import(module_path, None, 0)
 
 
 def _patch_import(paths: Tuple[str]):

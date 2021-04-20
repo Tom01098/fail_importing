@@ -111,3 +111,8 @@ class FailImportingTestCase(TestCase):
             class MyClass:
                 pass
             assert MyClass
+
+    @fail_importing("modules.example")
+    def test_relative(self):
+        with self.assertRaises(ImportError):
+            import modules.inner.inner
