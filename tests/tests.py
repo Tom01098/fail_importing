@@ -1,11 +1,20 @@
 import importlib
-from unittest import TestCase
+import sys
+from copy import copy
+from unittest import TestCase, skip
 from unittest.mock import patch, MagicMock
 
 from patch_import import fail_importing
 
 
 class FailImportingTestCase(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.original_modules = copy(sys.modules)
+
+    def tearDown(self):
+        sys.modules = self.original_modules
 
     @fail_importing("modules")
     def test_single_match(self):
@@ -86,3 +95,13 @@ class FailImportingTestCase(TestCase):
     def test_indirect(self):
         with self.assertRaises(ImportError):
             import modules.redirect
+
+    @fail_importing("modules.example")
+    def generator(self):
+        yield 0
+        import modules.example
+
+    @skip
+    def test_generator(self):
+        with self.assertRaises(ImportError):
+            list(self.generator())
