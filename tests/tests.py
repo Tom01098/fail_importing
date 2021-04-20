@@ -81,3 +81,8 @@ class FailImportingTestCase(TestCase):
         import modules.example
         with self.assertRaises(ImportError):
             import modules.other
+
+    @fail_importing("modules.example")
+    def test_indirect(self):
+        with self.assertRaises(ImportError):
+            import modules.redirect
