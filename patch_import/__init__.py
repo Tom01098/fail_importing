@@ -4,10 +4,9 @@ import builtins
 import importlib
 import inspect
 import re
-from copy import copy
 from functools import wraps
-from typing import Tuple, Optional, Callable, Any, Generator
 from types import ModuleType
+from typing import Tuple, Optional, Any, Generator
 from unittest.mock import patch
 
 # Ensure that the pure Python import implementation is used so we can patch it.
