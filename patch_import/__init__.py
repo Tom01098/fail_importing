@@ -4,6 +4,7 @@ import builtins
 import importlib
 import inspect
 import re
+from copy import copy
 from functools import wraps
 from typing import Tuple, Optional, Callable, Any, Generator
 from types import ModuleType
@@ -19,22 +20,29 @@ _unpatched_import = importlib._bootstrap._gcd_import
 
 class _ImportMock:
 
-    def __init__(self, paths: Tuple[str]) -> None:
-        self.paths = paths
+    def __init__(self, patterns: Tuple[str]) -> None:
+        self.patterns = patterns
 
     def __call__(self, name: str, package: Optional[str] = None, level: int = 0) -> ModuleType:
+        # Resolve relative paths to absolute ones.
         if level > 0:
             module_path = importlib._bootstrap._resolve_name(name, package, level)
         else:
             module_path = name
-        for path in self.paths:
-            if re.fullmatch(path, module_path):
+
+        # Raise if the path matches any of the patterns.
+        for pattern in self.patterns:
+            if re.fullmatch(pattern, module_path):
                 raise ImportError()
+
+        # Import using the normal import mechanism.
+        # It's safe to use level 0 because we've already resolved the module path (this is exactly the implementation
+        # of _gcd_import does!).
         return _unpatched_import(module_path, None, 0)
 
 
-def _patch_import(paths: Tuple[str]):
-    return patch('importlib._bootstrap._gcd_import', _ImportMock(paths))
+def _patch_import(patterns: Tuple[str]):
+    return patch('importlib._bootstrap._gcd_import', _ImportMock(patterns))
 
 
 # Generators are a little more involved. The generator function needs to be mocked over with an iterable, and the
@@ -44,26 +52,26 @@ def _patch_import(paths: Tuple[str]):
 #  but these are tests and no one should care... right?
 class _IteratorMock:
 
-    def __init__(self, gen: Generator, paths: Tuple[str]) -> None:
+    def __init__(self, gen: Generator, patterns: Tuple[str]) -> None:
         self.gen = gen
-        self.paths = paths
+        self.patterns = patterns
 
     def __next__(self) -> Any:
-        with _patch_import(self.paths):
+        with _patch_import(self.patterns):
             return next(self.gen)
 
 
 class _GeneratorMock:
 
-    def __init__(self, gen: Generator, paths: Tuple[str]) -> None:
+    def __init__(self, gen: Generator, patterns: Tuple[str]) -> None:
         self.gen = gen
-        self.paths = paths
+        self.patterns = patterns
 
     def __iter__(self) -> _IteratorMock:
-        return _IteratorMock(self.gen, self.paths)
+        return _IteratorMock(self.gen, self.patterns)
 
 
-def fail_importing(*paths: str):
+def fail_importing(*patterns: str):
     """Patch Python's import mechanism to fail with an ImportError for the
     given paths.
     """
@@ -74,19 +82,19 @@ def fail_importing(*paths: str):
 
         @wraps(func)
         def inner(*args, **kwargs):
-            nonlocal paths
+            nonlocal patterns
 
             # Account for nested patching.
             gcd = importlib._bootstrap._gcd_import
 
             if isinstance(gcd, _ImportMock):
-                paths += gcd.paths
+                patterns += gcd.patterns
 
             # Do the patching!
             if inspect.isgeneratorfunction(func):
-                return _GeneratorMock(func(*args, **kwargs), paths)
+                return _GeneratorMock(func(*args, **kwargs), patterns)
             else:
-                with _patch_import(paths):
+                with _patch_import(patterns):
                     return func(*args, **kwargs)
 
         return inner
