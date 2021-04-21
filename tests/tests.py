@@ -109,11 +109,11 @@ class FailImportingTestCase(TestCase):
     def test_generator(self):
         @fail_importing("modules.example")
         def generator():
-            yield
             import modules.example
+            yield
 
         with self.assertRaises(ImportError):
-            list(generator())
+            next(iter(generator()))
 
     def test_generator_called_from_decorated_function_after_creation(self):
         def generator(a):
