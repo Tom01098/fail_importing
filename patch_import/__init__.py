@@ -36,12 +36,18 @@ class _ImportMock:
                 raise ImportError()
 
         # Import using the normal import mechanism.
-        # It's safe to use level 0 because we've already resolved the module path (this is exactly the implementation
-        # of _gcd_import does!).
+        # It's safe to use level 0 because we've already resolved the module path
+        # (this is exactly what the implementation of _gcd_import does!).
         return _unpatched_import(module_path, None, 0)
 
 
 def _patch_import(patterns: Tuple[str]):
+    # Account for nested patching.
+    possibly_patched_import = importlib._bootstrap._gcd_import
+
+    if isinstance(possibly_patched_import, _ImportMock):
+        patterns += possibly_patched_import.patterns
+
     return patch('importlib._bootstrap._gcd_import', _ImportMock(patterns))
 
 
@@ -82,15 +88,6 @@ def fail_importing(*patterns: str):
 
         @wraps(func)
         def inner(*args, **kwargs):
-            nonlocal patterns
-
-            # Account for nested patching.
-            gcd = importlib._bootstrap._gcd_import
-
-            if isinstance(gcd, _ImportMock):
-                patterns += gcd.patterns
-
-            # Do the patching!
             if inspect.isgeneratorfunction(func):
                 return _GeneratorMock(func(*args, **kwargs), patterns)
             else:
