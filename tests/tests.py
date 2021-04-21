@@ -70,15 +70,15 @@ class FailImportingTestCase(TestCase):
 
         import modules.example
 
-    class SomeClass:
-
-        @fail_importing("modules")
-        def some_method(self):
-            import modules
-
     def test_method(self):
+        class SomeClass:
+
+            @fail_importing("modules")
+            def some_method(self):
+                import modules
+
         with self.assertRaises(ImportError):
-            self.SomeClass().some_method()
+            SomeClass().some_method()
 
     @fail_importing("modules.example")
     def test_importlib(self):
@@ -96,14 +96,14 @@ class FailImportingTestCase(TestCase):
         with self.assertRaises(ImportError):
             import modules.redirect
 
-    @fail_importing("modules.example")
-    def generator(self):
-        yield 0
-        import modules.example
-
     def test_generator(self):
+        @fail_importing("modules.example")
+        def generator():
+            yield 0
+            import modules.example
+
         with self.assertRaises(ImportError):
-            list(self.generator())
+            list(generator())
 
     def test_non_function_raises(self):
         with self.assertRaises(RuntimeError):
