@@ -16,6 +16,7 @@ class FailImportingTestCase(TestCase):
     def tearDown(self):
         sys.modules = self.original_modules
 
+    # Basic imports.
     @fail_importing("modules")
     def test_single_match(self):
         with self.assertRaises(ImportError):
@@ -44,6 +45,27 @@ class FailImportingTestCase(TestCase):
         from modules import example
         assert example
 
+    def test_method(self):
+        class SomeClass:
+
+            @fail_importing("modules")
+            def some_method(self):
+                import modules
+
+        with self.assertRaises(ImportError):
+            SomeClass().some_method()
+
+    @fail_importing("modules.example")
+    def test_importlib(self):
+        with self.assertRaises(ImportError):
+            importlib.import_module("modules.example")
+
+    @fail_importing("modules.example")
+    def test_relative(self):
+        with self.assertRaises(ImportError):
+            import modules.inner.inner
+
+    # Interactions with other decorators.
     @patch("typing.List")
     @fail_importing("modules.example")
     @patch("typing.Dict")
@@ -53,6 +75,7 @@ class FailImportingTestCase(TestCase):
         with self.assertRaises(ImportError):
             import modules.example
 
+    # More complex control flow.
     @fail_importing("modules.example")
     def inner_func(self):
         with self.assertRaises(ImportError):
@@ -70,32 +93,19 @@ class FailImportingTestCase(TestCase):
 
         import modules.example
 
-    def test_method(self):
-        class SomeClass:
-
-            @fail_importing("modules")
-            def some_method(self):
-                import modules
-
-        with self.assertRaises(ImportError):
-            SomeClass().some_method()
-
     @fail_importing("modules.example")
-    def test_importlib(self):
+    def test_indirect(self):
         with self.assertRaises(ImportError):
-            importlib.import_module("modules.example")
+            import modules.redirect
 
+    # Regexes.
     @fail_importing(".*.other")
     def test_regex(self):
         import modules.example
         with self.assertRaises(ImportError):
             import modules.other
 
-    @fail_importing("modules.example")
-    def test_indirect(self):
-        with self.assertRaises(ImportError):
-            import modules.redirect
-
+    # Generators.
     def test_generator(self):
         @fail_importing("modules.example")
         def generator():
@@ -120,14 +130,10 @@ class FailImportingTestCase(TestCase):
 
         inner()
 
+    # Errors.
     def test_non_function_raises(self):
         with self.assertRaises(RuntimeError):
             @fail_importing()
             class MyClass:
                 pass
             assert MyClass
-
-    @fail_importing("modules.example")
-    def test_relative(self):
-        with self.assertRaises(ImportError):
-            import modules.inner.inner
