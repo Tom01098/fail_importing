@@ -4,7 +4,7 @@ from copy import copy
 from unittest import TestCase, skip
 from unittest.mock import patch, MagicMock
 
-from patch_import import fail_importing
+from fail_importing import fail_importing
 
 
 class FailImportingTestCase(TestCase):
