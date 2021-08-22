@@ -1,5 +1,3 @@
-"""Import utilities for unittest.
-"""
 import builtins
 import importlib
 import inspect
