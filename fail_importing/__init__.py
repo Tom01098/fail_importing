@@ -55,25 +55,18 @@ def _patch_import(patterns: Tuple[str]):
 # __next__.
 # TODO Can introspectability be preserved here? _GeneratorMock isn't the 'expected' result of calling a generator,
 #  but these are tests and no one should care... right?
-class _IteratorMock:
-
-    def __init__(self, gen: Generator, patterns: Tuple[str]) -> None:
-        self.gen = gen
-        self.patterns = patterns
-
-    def __next__(self) -> Any:
-        with _patch_import(self.patterns):
-            return next(self.gen)
-
-
 class _GeneratorMock:
 
     def __init__(self, gen: Generator, patterns: Tuple[str]) -> None:
         self.gen = gen
         self.patterns = patterns
 
-    def __iter__(self) -> _IteratorMock:
-        return _IteratorMock(self.gen, self.patterns)
+    def __iter__(self) -> '_GeneratorMock':
+        return self
+
+    def __next__(self) -> Any:
+        with _patch_import(self.patterns):
+            return next(self.gen)
 
 
 def fail_importing(*patterns: str):
