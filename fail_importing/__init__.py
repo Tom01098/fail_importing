@@ -30,7 +30,7 @@ class _ImportMock:
         # Raise if the path matches any of the patterns.
         for pattern in self.patterns:
             if re.fullmatch(pattern, module_path):
-                raise ImportError()
+                raise ImportError
 
         # Import using the normal import mechanism.
         # It's safe to use level 0 because we've already resolved the module path
