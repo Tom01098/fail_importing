@@ -9,7 +9,7 @@ pattern like this:
 
     try:
         import something
-    else:
+    except ImportError:
         import something_else as something
 
 That way ``something`` is always defined and the rest of the codebase does not need to care. But how do we test both
@@ -27,7 +27,7 @@ the dependency isn't installed.
 When the test finishes executing, the name can be imported as normal. It can be applied to normal functions, nested
 functions, relative imports, and even generators!
 
-`full_match`_ is used to determine if the path matches or not, so you can use any regex matching you need. Note that
+`full_match`_ is used to determine if the path matches or not, so you can use any regex matching your need. Note that
 relative imports are resolved to absolute imports before the check is made.
 
 .. _full_match: https://docs.python.org/3/library/re.html#re.fullmatch
